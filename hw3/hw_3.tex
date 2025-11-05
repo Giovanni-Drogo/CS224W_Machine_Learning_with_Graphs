@@ -1,0 +1,230 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{bbm}
+\usepackage{url}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{fancyhdr}
+\usepackage{enumerate}
+\usepackage{tikz}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+
+\newcommand*\Bell{\ensuremath{\boldsymbol\ell}}
+
+\oddsidemargin  0in \evensidemargin 0in \topmargin -0.5in
+\headheight 0.25in \headsep 0.25in
+\textwidth   6.5in \textheight 9in %\marginparsep 0pt \marginparwidth 0pt
+\parskip 1.5ex  \parindent 0ex \footskip 20pt
+
+\newcommand{\note}[1]{\textsf{{\textcolor{red}{[[#1]]}}}}
+\newcommand{\boxcomment}[1]{\noindent\fbox{\parbox{\textwidth}{#1}}\medskip\\}
+
+\newcommand{\xhdr}[1]{\paragraph{\bf{#1}}}
+\newcommand{\subquestion}[1]{\subsubsection*{{#1}}}
+
+\newcommand{\mysmall}{\textnormal{small}}
+\newcommand{\dataset}[1]{{\tt #1}}
+
+\newif\ifsolution
+\solutiontrue
+%\solutionfalse  % UNCOMMENT TO TURN OFF SOLUTIONS
+\ifsolution
+\newcommand{\Solution}[1]{{\medskip \color{red} \bf $\bigstar$~\sf \textbf{Solution}~$\bigstar$ \sf #1 } \bigskip}
+\else
+\newcommand{\Solution}[1]{}
+\fi
+
+%%---------------------------------------------------------------------------
+%%      Theorems and other environments:
+%%---------------------------------------------------------------------------
+\newtheorem{thm}{Theorem}%[lecture]
+\newtheorem{prop}{Proposition}%[lecture]
+\newtheorem{lemma}{Lemma}%[lecture]
+\newtheorem{result}{Result}%[lecture]
+\newtheorem{cor}{Corollary}%[lecture]
+\newtheorem{claim}{Claim}%[lecture]
+\newenvironment{proof}{{\bf Proof: }}{\hfill\rule{2mm}{2mm}}
+
+\newcounter{example}
+\newenvironment{example}[1][]
+ {\refstepcounter{example}{\bf Example~\arabic{example}~#1}}{}
+ \renewcommand{\theexample}{\arabic{example}}
+\newcounter{problem}
+\newenvironment{problem}[1][]
+ {\refstepcounter{problem}{\bf Problem~\arabic{lecture}.\arabic{problem}~#1}}{}
+ \renewcommand{\theproblem}{\arabic{lecture}.\arabic{problem}}
+
+\newcounter{definition}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+%%%----------------------------------------------------------------------------- 
+
+%%%-----------------------------------------------------------------------------
+%%% Header
+\newfont{\bssten}{cmssbx10}
+\newfont{\bssnine}{cmssbx10 scaled 900}
+\newfont{\bssdoz}{cmssbx10 scaled 1200}
+\pagestyle{fancy}  % use this?
+ \fancyhead{\bssnine CS224W: Machine Learning with Graphs - Homework 3}
+ \fancyhead[RE]{} \fancyhead[LO]{}
+ \fancyhead[LE]{\bssnine \arabic{page}} \fancyhead[RO]{\bssnine \arabic{page}}
+ \lfoot{} \cfoot{} \rfoot{}
+%%%-----------------------------------------------------------------------------
+%
+\begin{document}
+\thispagestyle{empty}
+\boxcomment{
+{\bf \textsf{CS224W: Machine Learning with Graphs \hfill Fall 2021}}\medskip
+
+\centerline{\LARGE \bf \textsf{ Homework 3}}\medskip
+
+{\sl \hfill  \textsf{Due 11:59pm PT Thursday November 11 2021\\
+john doe \ \ jdoe@stanford.edu} \hfill}
+}\bigskip
+
+%%-----------------------------------------------------------------------------
+%%Questions
+\section*{Question 1: GraphRNN (20 points)}
+\subsection*{Q1.1 (12 points)}
+\Solution{
+The sequence of node and edge additions using BFS ordering starting from Node A (with neighbors explored in alphabetical order) is:
+
+\[
+\{S_A^\pi : [],\ S_B^\pi : [S_{B,A}^\pi = 1],\ S_D^\pi : [S_{D,A}^\pi = 1, S_{D,B}^\pi = 0],\ S_C^\pi : [S_{C,A}^\pi = 0, S_{C,B}^\pi = 1, S_{C,D}^\pi = 0],
+\]
+
+\[
+S_E^\pi : [S_{E,A}^\pi = 0, S_{E,B}^\pi = 1, S_{E,C}^\pi = 0, S_{E,D}^\pi = 1],\ S_F^\pi : [S_{F,A}^\pi = 0, S_{F,B}^\pi = 0, S_{F,C}^\pi = 1,
+\]
+
+\[
+S_{F,D}^\pi = 0, S_{F,E}^\pi = 1]\}
+\]
+
+Note: The sequence follows BFS ordering from Node A, with neighbors explored in alphabetical order at each step.
+}
+
+\subsection*{Q1.2 (8 points)}
+\Solution{
+Two advantages of using BFS ordering over random ordering in graph generation:
+
+1. \textbf{Reduces long-range dependencies}: BFS ordering tends to connect new nodes to recently added nodes, making the sequence more local and easier for RNNs to learn.
+
+2. \textbf{Automatic sparsity pattern}: In BFS ordering, edges are only predicted between the new node and existing nodes in the current BFS frontier, reducing the number of required predictions and enforcing a natural sparsity pattern that matches real-world graphs.
+}
+
+\section*{Question 2: Subgraphs and Order Embeddings (35 points)}
+\subsection*{Q2.1 Transitivity (8 points)}
+\Solution{
+We prove that if graph $A$ is a subgraph of graph $B$, and graph $B$ is a subgraph of graph $C$, then graph $A$ is a subgraph of graph $C$.
+
+\textbf{Proof:}
+
+Let:
+- $f: V_A \to V_B' \subseteq V_B$ be the subgraph isomorphism from $A$ to $B$
+- $g: V_B \to V_C' \subseteq V_C$ be the subgraph isomorphism from $B$ to $C$
+
+Construct composite mapping $h: V_A \to V_C$ defined as $h(v) = g(f(v))$ for all $v \in V_A$.
+
+Verification:
+\begin{itemize}
+    \item \textbf{Bijectivity}: Since $f$ and $g$ are bijective, $h$ is bijective.
+    \item \textbf{Edge preservation}: For any $(u,v) \in E_A$, $(f(u),f(v)) \in E_B$ and thus $(g(f(u)),g(f(v))) = (h(u),h(v)) \in E_C$.
+    \item \textbf{Non-edge preservation}: For any $(u,v) \notin E_A$, $(f(u),f(v)) \notin E_B$ and thus $(h(u),h(v)) \notin E_C$.
+\end{itemize}
+
+Therefore, $h$ is a valid subgraph isomorphism mapping from $A$ to $C$.
+}
+
+\subsection*{Q2.2 Anti-symmetry (8 points)}
+\Solution{
+\textbf{Proof:} Let $f: V_A \to V_B' \subseteq V_B$ and $g: V_B \to V_A' \subseteq V_A$ be the subgraph isomorphisms.
+
+Since $f$ and $g$ are bijections: $|V_A| = |V_B'| \leq |V_B|$ and $|V_B| = |V_A'| \leq |V_A|$, so $|V_A| = |V_B|$, hence $V_B' = V_B$ and $V_A' = V_A$.
+
+Now $f: V_A \to V_B$ and $g: V_B \to V_A$ are bijections between equal-sized sets. For any $(u,v) \in E_A$, $(f(u),f(v)) \in E_B$, and for any $(x,y) \in E_B$, $(g(x),g(y)) \in E_A$. Since $g = f^{-1}$, $f$ preserves both edges and non-edges bidirectionally.
+
+Thus $f$ is a graph isomorphism between $A$ and $B$.
+}
+
+\subsection*{Q2.3 Common subgraph (4 points)}
+\Solution{
+\textbf{Proof:}
+
+($\Rightarrow$) If $X$ is a common subgraph of $A$ and $B$:
+\[
+X \subseteq A \Rightarrow z_X \preccurlyeq z_A,\quad X \subseteq B \Rightarrow z_X \preccurlyeq z_B
+\]
+\[
+\Rightarrow z_X \preccurlyeq \min\{z_A, z_B\}
+\]
+
+($\Leftarrow$) If $z_X \preccurlyeq \min\{z_A, z_B\}$:
+\[
+z_X \preccurlyeq z_A \Rightarrow X \subseteq A,\quad z_X \preccurlyeq z_B \Rightarrow X \subseteq B
+\]
+\[
+\Rightarrow X \text{ is a common subgraph of } A \text{ and } B.
+\]
+
+}
+
+\subsection*{Q2.4 Order embeddings for graphs that are not subgraphs of each other (5 points)}
+\Solution{
+Given: $A, B, C$ are non-isomorphic and not subgraphs of each other, with $z_A[0] > z_B[0] > z_C[0]$ in a 2D order embedding space.
+
+Since $B$ is not a subgraph of $A$ and $z_B[0] < z_A[0]$, we must have $z_B[1] > z_A[1]$ to violate $z_B \preccurlyeq z_A$.
+
+Since $C$ is not a subgraph of $B$ and $z_C[0] < z_B[0]$, we must have $z_C[1] > z_B[1]$ to violate $z_C \preccurlyeq z_B$.
+
+Since $C$ is not a subgraph of $A$ and $z_C[0] < z_A[0]$, we must have $z_C[1] > z_A[1]$ to violate $z_C \preccurlyeq z_A$.
+
+Combining these: $z_C[1] > z_B[1] > z_A[1]$.
+
+Thus the second dimension must satisfy:
+\[
+z_C[1] > z_B[1] > z_A[1]
+\]
+}
+
+\subsection*{Q2.5 Limitation of 2-dimensional order embedding space (10 points)}
+\Solution{
+Construct $X, Y, Z$ as follows:
+\begin{itemize}
+    \item $X$ is a common subgraph of $A$, $B$, and $C$
+    \item $Y$ is a common subgraph of $A$ and $B$ only  
+    \item $Z$ is a common subgraph of $A$ and $C$ only
+\end{itemize}
+
+\textbf{Reasoning:}
+
+From Q2.3 and the coordinate ordering $z_A[0] > z_B[0] > z_C[0]$, $z_C[1] > z_B[1] > z_A[1]$:
+\begin{itemize}
+    \item $z_X \preccurlyeq \min(z_A, z_B, z_C) = (z_C[0], z_A[1])$
+    \item $z_Y \preccurlyeq \min(z_A, z_B) = (z_B[0], z_A[1])$
+    \item $z_Z \preccurlyeq \min(z_A, z_C) = (z_C[0], z_A[1])$
+\end{itemize}
+
+Thus:
+\begin{itemize}
+    \item $z_X \preccurlyeq (z_C[0], z_A[1]) \preccurlyeq (z_B[0], z_A[1]) = z_Y$ $\Rightarrow$ $z_X \preccurlyeq z_Y$
+    \item $z_X \preccurlyeq (z_C[0], z_A[1]) = z_Z$ $\Rightarrow$ $z_X \preccurlyeq z_Z$
+\end{itemize}
+
+However, $X$ may not actually be a common subgraph of $Y$ and $Z$, demonstrating the limitation of 2D order embedding space.
+}
+
+\section*{Honor Code (0 points)}
+(X) I have read and understood Stanford Honor Code before I submitted my work.\\
+\noindent
+\textbf{Collaboration: Write down the names \& SUNetIDs of students you collaborated with on Homework 3 (None if you didn't).} \\
+None\\
+\noindent
+\textbf{Note: Read our website on our policy about collaboration!}
+
+\end{document}
