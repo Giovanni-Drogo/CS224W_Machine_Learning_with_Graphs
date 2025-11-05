@@ -1,0 +1,74 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\begin{document}
+
+\section*{Effect of Depth on Expressiveness}
+
+For this sub-question, our update rule is:
+
+\[
+h_{v}^{k+1} = h_{v}^{k} + \sum_{i \in \mathcal{N}_{v}} h_{i}^{k}
+\]
+
+where \(\mathcal{N}_{v}\) is the neighbourhood of node \(v\), and \(k\) is the layer number. I will just use a recurrence instead of drawing graphs as I think that is much simpler. I will just use the number for the certain node. 
+
+\subsection*{Layer \(k=0\):}
+Does not work, because that means no propagation and these nodes have the same initial feature vector = \([1]\).
+
+\subsection*{Layer \(k=1\):}
+Also does not work, because these nodes have the same one-hop neighbourhood, which is the node \(5\).
+
+\subsection*{Layer \(k=2\):}
+Will also not work, because they have the same 2-hop neighbourhood (nodes \(5\), \(4\), and \(6\)), but I will show this case as an example. We need to compute \(h_T^{(2)}\) for both graphs, i.e.,
+
+\[
+h_T^{(2)} = h_T^{(1)} + \sum_{i \in N_T} h_i^{(1)}
+\]
+
+For the Left Graph:
+
+\begin{align*}
+h_T^{(2)} &= h_T^{(1)} + \sum_{i \in N_T} h_i^{(1)} \\
+&= (h_T^{(0)} + h_5^{(0)}) + h_5^{(1)} \\
+&= [2] + (h_5^{(0)} + h_4^{(0)} + h_T^{(0)} + h_6^{(0)}) \\
+&= [6]
+\end{align*}
+
+This will be the same for the Right Graph.
+
+\subsection*{Layer \(k=3\):}
+Will work. We need to compute \(h_T^{(3)}\) for both graphs, i.e.,
+
+\[
+h_T^{(3)} = h_T^{(2)} + h_5^{(2)}
+\]
+
+For the Left Graph:
+
+\begin{align*}
+h_T^{(3)} &= h_T^{(2)} + h_5^{(2)} \\
+&= [6] + (h_5^{(1)} + h_4^{(1)} + h_T^{(1)} + h_6^{(1)}) \\
+&= [6] + (h_5^{(0)} + h_4^{(0)} + h_T^{(0)} + h_6^{(0)}) \\
+&\quad + (h_4^{(0)} + h_5^{(0)} + h_3^{(0)}) + (h_T^{(0)} + h_5^{(0)}) \\
+&\quad + (h_5^{(0)} + h_6^{(0)} + h_7^{(0)}) \\
+&= [18]
+\end{align*}
+
+For the Right Graph:
+
+\begin{align*}
+h_T^{(3)} &= h_T^{(2)} + h_5^{(2)} \\
+&= [6] + (h_5^{(1)} + h_4^{(1)} + h_T^{(1)} + h_6^{(1)}) \\
+&= [6] + (h_5^{(0)} + h_4^{(0)} + h_T^{(0)} + h_6^{(0)}) \\
+&\quad + (h_4^{(0)} + h_5^{(0)} + h_3^{(0)}) + (h_T^{(0)} + h_5^{(0)}) \\
+&\quad + (h_A^{(0)} + h_6^{(0)} + h_7^{0} + h_8^{0}) \\
+&= [19]
+\end{align*}
+
+The only difference was Node \(6\) having vs. not having a connection to Node \(8\).
+
+\end{document}
